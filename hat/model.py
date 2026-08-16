@@ -61,3 +61,23 @@ class MultiHeadBiasedAttention(nn.Module):
         weights = scores.softmax(dim=-1)
         merged = (weights @ v).transpose(1, 2).reshape(b, n, -1)
         return self.out(merged)
+
+
+class Block(nn.Module):
+    """Attention then a small per-token MLP, each with a residual and pre-norm."""
+
+    def __init__(self, dim, heads=4, mlp_ratio=4):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim)
+        self.attn = MultiHeadBiasedAttention(dim, heads)
+        self.norm2 = nn.LayerNorm(dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, dim * mlp_ratio),
+            nn.GELU(),
+            nn.Linear(dim * mlp_ratio, dim),
+        )
+
+    def forward(self, x, bias=None):
+        x = x + self.attn(self.norm1(x), bias)   # bias travels down to attention
+        x = x + self.mlp(self.norm2(x))
+        return x
