@@ -2,8 +2,8 @@
 
 import numpy as np
 
-CROP = 128        # cells on a side that the model SEES
-SCORE = 64        # cells on a side that the loss is computed on (centred)
+CROP = 512        # cells on a side that the model SEES
+SCORE = 256       # cells scored, centred
 
 
 def take_crop(arr, row, col, size=CROP):

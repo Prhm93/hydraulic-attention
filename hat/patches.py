@@ -2,7 +2,7 @@
 
 import numpy as np
 
-PATCH = 8      # cells on a side; 8 * 30 m = 240 m
+PATCH = 32     # cells on a side; 32 * 30 m = 960 m
 WET = 0.01     # metres
 
 
