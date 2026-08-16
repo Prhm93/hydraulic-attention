@@ -3,3 +3,8 @@ data/
 __pycache__/
 *.pyc
 *.zip
+
+# local backups and build artefacts
+*.bak
+*.bak[0-9]
+*.egg-info/
