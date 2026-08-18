@@ -50,11 +50,13 @@ def add_barriers(region, crop=CROP, patch=PATCH, verbose=True):
     """
     g = crop // patch
     centres = patch_centre_cells(g, g, patch)
-    out = {}
+    out, bed_mean = {}, {}
     for row, col in region["origins"]:
         sub = region["dem"][row:row + crop, col:col + crop]
         out[(row, col)] = barrier_max(sub, centres)
+        bed_mean[(row, col)] = float(sub.mean())   # shared datum for eta and B
         if verbose:
             print(f"  barrier {(row, col)} done", flush=True)
     region["barrier"] = out
+    region["bed_mean"] = bed_mean
     return region
