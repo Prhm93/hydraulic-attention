@@ -19,3 +19,7 @@ def read_pair(frames, i):
     now = read_depth(frames[i][1])
     nxt = read_depth(frames[i + 1][1])
     return now, nxt
+
+
+FRAME_STEP = 24
+HORIZON_SECONDS = DT_SECONDS * FRAME_STEP   # 7200.0 s - use this for tau
