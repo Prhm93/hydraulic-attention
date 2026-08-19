@@ -8,3 +8,5 @@ __pycache__/
 *.bak
 *.bak[0-9]
 *.egg-info/
+checkpoints/
+logs/

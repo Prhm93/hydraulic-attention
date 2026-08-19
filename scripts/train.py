@@ -155,11 +155,13 @@ def main():
                     help="day (1-10) to hold out of training for a stress test")
     ap.add_argument("--resume", default=None)
     ap.add_argument("--tag", default="", help="suffix for checkpoint filenames")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="paired seed: same value across variants = same init and same data order")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     ghash = git_hash()
-    print(f"variant={args.variant} batch={args.batch} device={device} git={ghash}", flush=True)
+    print(f"variant={args.variant} seed={args.seed} batch={args.batch} device={device} git={ghash}", flush=True)
 
     D = "data/raw/FloodCastBench/Relevant data/"
     F = "data/raw/FloodCastBench/High-fidelity flood forecasting/30m/Australia"
@@ -175,10 +177,14 @@ def main():
         exclude = (d0, d0 + 288)
         print(f"holding out day {args.exclude_day}: frames {exclude}", flush=True)
     ds = FloodPairs(region, start=0, stop=args.train_stop, exclude=exclude)
-    dl = DataLoader(ds, batch_size=args.batch, shuffle=True,
+    g = torch.Generator()
+    g.manual_seed(args.seed)
+    dl = DataLoader(ds, batch_size=args.batch, shuffle=True, generator=g,
                     num_workers=4, collate_fn=collate, drop_last=True)
     print(f"examples={len(ds)} steps/epoch={len(dl)}", flush=True)
 
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
     model = HydraulicTransformer(in_channels=4, depth=6).to(device)
     phys, uses_gate = make_physics(args.variant, device)
     params = list(model.parameters()) + (list(phys.parameters()) if phys else [])
@@ -191,7 +197,7 @@ def main():
 
     def ckpt_path(kind):
         t = f"_{args.tag}" if args.tag else ""
-        return f"checkpoints/v{args.variant}{t}_{kind}.pt"
+        return f"checkpoints/v{args.variant}{t}_s{args.seed}_{kind}.pt"
 
     best = float("inf")
     for epoch in range(start_epoch, args.epochs):
