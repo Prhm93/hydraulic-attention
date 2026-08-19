@@ -12,10 +12,12 @@ from hat.config import H_SCALE, DH_SCALE, BED_SCALE, MANNING_SCALE
 
 
 class FloodPairs:
-    def __init__(self, region, start, stop, crop=CROP, score=SCORE, frame_step=FRAME_STEP):
+    def __init__(self, region, start, stop, crop=CROP, score=SCORE,
+                 frame_step=FRAME_STEP, exclude=None):
         self.r = region
         self.crop, self.score, self.step = crop, score, frame_step
         self.origins = region["origins"]
+        self._exclude = exclude if exclude is not None else (None, None)
         # bed per patch from the ABSOLUTE dem, for eta (shares the barrier datum)
         # bed exists everywhere, so a plain per-patch mean - not the wet-masked
         # mean used for depth. Avoids reusing a wet-mask fn for an unmasked purpose.
@@ -26,7 +28,15 @@ class FloodPairs:
         # index over [start, stop): need i-step to look back and i+step to predict
         lo = max(start, frame_step)
         hi = min(stop, region["depth"].shape[0] - frame_step)
-        self.index = [(i, k) for i in range(lo, hi) for k in range(len(self.origins))]
+        # optionally carve out an interior window (the held-out test day), with a
+        # frame_step guard band so no training pair reaches into the excluded range
+        ex0, ex1 = getattr(self, "_exclude", (None, None))
+        def ok(i):
+            if ex0 is None:
+                return True
+            return (i + frame_step < ex0) or (i - frame_step >= ex1)
+        self.index = [(i, k) for i in range(lo, hi)
+                      for k in range(len(self.origins)) if ok(i)]
         self.origin_idx = {o: k for k, o in enumerate(self.origins)}
 
     def __len__(self):

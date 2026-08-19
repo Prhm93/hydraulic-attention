@@ -151,6 +151,8 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--save-every", type=int, default=500, help="steps between mid-epoch saves")
     ap.add_argument("--train-stop", type=int, default=2304, help="frame index: end of days 1-8")
+    ap.add_argument("--exclude-day", type=int, default=None,
+                    help="day (1-10) to hold out of training for a stress test")
     ap.add_argument("--resume", default=None)
     ap.add_argument("--tag", default="", help="suffix for checkpoint filenames")
     args = ap.parse_args()
@@ -167,7 +169,12 @@ def main():
     add_barriers(region, verbose=False)
     statics = build_gpu_statics(region, device)
 
-    ds = FloodPairs(region, start=0, stop=args.train_stop)
+    exclude = None
+    if args.exclude_day is not None:
+        d0 = (args.exclude_day - 1) * 288
+        exclude = (d0, d0 + 288)
+        print(f"holding out day {args.exclude_day}: frames {exclude}", flush=True)
+    ds = FloodPairs(region, start=0, stop=args.train_stop, exclude=exclude)
     dl = DataLoader(ds, batch_size=args.batch, shuffle=True,
                     num_workers=4, collate_fn=collate, drop_last=True)
     print(f"examples={len(ds)} steps/epoch={len(dl)}", flush=True)
