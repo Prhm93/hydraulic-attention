@@ -155,6 +155,8 @@ def main():
                     help="day (1-10) to hold out of training for a stress test")
     ap.add_argument("--resume", default=None)
     ap.add_argument("--tag", default="", help="suffix for checkpoint filenames")
+    ap.add_argument("--wd", type=float, default=0.01,
+                    help="weight decay for transformer weights; physics params always get 0")
     ap.add_argument("--seed", type=int, default=0,
                     help="paired seed: same value across variants = same init and same data order")
     args = ap.parse_args()
@@ -187,8 +189,12 @@ def main():
     np.random.seed(args.seed)
     model = HydraulicTransformer(in_channels=4, depth=6).to(device)
     phys, uses_gate = make_physics(args.variant, device)
-    params = list(model.parameters()) + (list(phys.parameters()) if phys else [])
-    opt = torch.optim.AdamW(params, lr=args.lr)
+    groups = [{"params": list(model.parameters()), "weight_decay": args.wd}]
+    if phys is not None:
+        groups.append({"params": [q for q in phys.parameters() if q.requires_grad],
+                       "weight_decay": 0.0})
+    opt = torch.optim.AdamW(groups, lr=args.lr)
+    print(f"opt groups: model wd={args.wd}, physics wd=0.0", flush=True)
 
     step, start_epoch = 0, 0
     if args.resume:
