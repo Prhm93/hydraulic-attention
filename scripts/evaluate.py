@@ -36,9 +36,7 @@ def evaluate(ckpt, variant, test_start, test_stop, batch=4):
 
     model = HydraulicTransformer(in_channels=4, depth=6).to(device).eval()
     phys, uses_gate = make_physics(variant, device)
-    opt = torch.optim.AdamW(list(model.parameters()) +
-                            (list(phys.parameters()) if phys else []), lr=1e-4)
-    load_ckpt(ckpt, model, phys, opt, variant, git_hash())
+    load_ckpt(ckpt, model, phys, None, variant, git_hash())
 
     s = score_slice(CROP, SCORE)
     se_model, se_base, n = 0.0, 0.0, 0
@@ -49,9 +47,9 @@ def evaluate(ckpt, variant, test_start, test_stop, batch=4):
         bias = phi_for_batch(phys, uses_gate, tau, eta, oidx, statics[1], statics[2]) \
             if phys is not None else None
 
-        pred_m = model(x, bias)[:, 0, s, s] * DH_SCALE          # metres
+        pred_m = model(x, bias)[:, 0, s, s]                     # already metres
         base_m = x[:, 1, s, s] * DH_SCALE                       # channel 1 = prev dh, metres
-        targ_m = target * DH_SCALE                              # metres
+        targ_m = target                                         # already metres
 
         se_model += float(((pred_m - targ_m) ** 2).sum())
         se_base  += float(((base_m - targ_m) ** 2).sum())
@@ -72,7 +70,7 @@ def main():
     ap.add_argument("--batch", type=int, default=4)
     args = ap.parse_args()
     rm, rb, sk = evaluate(args.ckpt, args.variant, args.test_start, args.test_stop, args.batch)
-    print(f"rmse_model={rm:.5f} m  rmse_baseline={rb:.5f} m  skill={sk:.1f}%")
+    print(f"rmse_model={rm:.8f} m  rmse_baseline={rb:.8f} m  skill={sk:.1f}%")
 
 
 if __name__ == "__main__":

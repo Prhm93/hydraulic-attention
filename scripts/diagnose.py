@@ -38,9 +38,7 @@ def collect(ckpt, variant, start, stop, batch=4):
 
     model = HydraulicTransformer(in_channels=4, depth=6).to(device).eval()
     phys, uses_gate = make_physics(variant, device)
-    opt = torch.optim.AdamW(list(model.parameters()) +
-                            (list(phys.parameters()) if phys else []), lr=1e-4)
-    load_ckpt(ckpt, model, phys, opt, variant, git_hash())
+    load_ckpt(ckpt, model, phys, None, variant, git_hash())
 
     s = score_slice(CROP, SCORE)
     P, T, B = [], [], []          # prediction, truth, baseline (all metres)

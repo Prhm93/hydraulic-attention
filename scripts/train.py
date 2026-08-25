@@ -130,6 +130,7 @@ def save_ckpt(path, model, phys, opt, step, epoch, variant, ghash):
 
 
 def load_ckpt(path, model, phys, opt, variant, ghash):
+    """opt may be None: eval-only callers do not need optimiser state."""
     ck = torch.load(path, map_location="cpu")
     if ck["variant"] != variant:
         raise SystemExit(f"variant mismatch: ckpt is {ck['variant']}, you asked {variant}")
@@ -139,7 +140,8 @@ def load_ckpt(path, model, phys, opt, variant, ghash):
     model.load_state_dict(ck["model"])
     if phys is not None and ck["phys"] is not None:
         phys.load_state_dict(ck["phys"])
-    opt.load_state_dict(ck["opt"])
+    if opt is not None:
+        opt.load_state_dict(ck["opt"])
     return ck["step"], ck["epoch"]
 
 
