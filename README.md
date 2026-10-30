@@ -44,3 +44,7 @@ See `docs/` for setup, the data card, the decisions log, and open questions.
 - Depth frames carry no georeferencing. Cell size is 30 m and must be hard-coded.
 - Filenames sort alphabetically; parse the integer and sort numerically.
 - Rainfall is half-hourly against 300 s depth frames — six frames per rainfall grid.
+
+#### Status: 
+
+closed (August 2026). The model did not beat a simple "no change" guess. A baseline check found a scaling bug that had made every score look about 20 times better. After the fix, the model was 32% worse than the simple guess over 3 seeds. Kept as a record.
